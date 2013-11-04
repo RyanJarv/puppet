@@ -47,5 +47,13 @@ node 'agent1.localdomain' {
 }
 
 node 'ubuntu1' {
+  include roles::lamp::test
+}
+
+node 'ubuntu12' {
+    include roles::linuxDns
+}
+
+node 'ubuntu13' {
     include roles::lamp::test
 }
