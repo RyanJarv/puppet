@@ -1,0 +1,32 @@
+---
+# public, backnet, backnet2 are special names
+# 'DHCP' as ip uses DHCP
+IPs:
+  public:
+      eth: eth0
+      ip: DHCP
+  backnet:
+      eth: eth1
+      ip: 192.168.56.111
+      netmask: 255.255.255.0
+  backnet2:
+      eth: eth2
+      ip: 192.168.100.111
+      netmask: 255.255.255.0
+
+current_sites:
+  - oiuiuui.com
+  - whatever.com
+  - bbb.com
+  - nothing.com
+  - hi.com
+
+removed_sites:
+#  - test8989.com
+#  - ls.lock.net
+#  - some.random.site.com
+#  - test123.com
+#  - test1234.com
+#  - a.bad.site.com
+#  - aaa.com
+#  - asdfasdf.com

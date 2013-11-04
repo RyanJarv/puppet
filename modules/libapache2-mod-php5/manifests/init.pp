@@ -4,4 +4,5 @@ class mod-fastcg_php5-fpm {
       ensure => 'present',
     }
     apache::module { 'php5': }
+    apache::module { 'actions': }
 }

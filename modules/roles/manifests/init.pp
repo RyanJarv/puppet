@@ -7,6 +7,21 @@ class roles::lamp inherits roles {
     include profiles::linux
 }
 
+class roles::linuxDns inherits roles {
+    include profiles::dns
+    include profiles::linux
+}
+
+
 class roles::lamp::test inherits roles::lamp {
-  notify { "running test env":}
+}
+
+class roles::bacula inherits roles {
+  #include profiles::bacula
+  include profiles::linux
+}
+
+class roles::nagios inherits roles {
+  #include profiles::nagios
+  include profiles::linux
 }

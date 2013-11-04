@@ -1,225 +1,292 @@
-require "#{File.join(File.dirname(__FILE__),'..','spec_helper.rb')}"
+require 'spec_helper'
 
-describe 'apache' do
-
-  let(:title) { 'apache' }
-  let(:node) { 'rspec.example42.com' }
-  let(:facts) { { :ipaddress => '10.42.42.42' , :monitor_tool => 'puppi' } }
-
-  describe 'Test standard installation' do
-    it { should contain_package('apache').with_ensure('present') }
-    it { should contain_service('apache').with_ensure('running') }
-    it { should contain_service('apache').with_enable('true') }
-    it { should contain_file('apache.conf').with_ensure('present') }
-  end
-
-  describe 'Test standard installation with monitoring and firewalling' do
-    let(:params) { {:monitor => true , :firewall => true, :port => '42' } }
-
-    it { should contain_package('apache').with_ensure('present') }
-    it { should contain_service('apache').with_ensure('running') }
-    it { should contain_service('apache').with_enable('true') }
-    it { should contain_file('apache.conf').with_ensure('present') }
-    it 'should monitor the process' do
-      content = catalogue.resource('monitor::process', 'apache_process').send(:parameters)[:enable]
-      content.should == true
+describe 'apache', :type => :class do
+  context "on a Debian OS" do
+    let :facts do
+      {
+        :osfamily               => 'Debian',
+        :operatingsystemrelease => '6',
+        :concat_basedir         => '/dne',
+      }
     end
-    it 'should place a firewall rule' do
-      content = catalogue.resource('firewall', 'apache_tcp_42').send(:parameters)[:enable]
-      content.should == true
-    end
-  end
-
-  describe 'Test decommissioning - absent' do
-    let(:params) { {:absent => true, :monitor => true , :firewall => true, :port => '42'} }
-
-    it 'should remove Package[apache]' do should contain_package('apache').with_ensure('absent') end 
-    it 'should stop Service[apache]' do should contain_service('apache').with_ensure('stopped') end
-    it 'should not enable at boot Service[apache]' do should contain_service('apache').with_enable('false') end
-    it 'should remove apache configuration file' do should contain_file('apache.conf').with_ensure('absent') end
-    it 'should not monitor the process' do
-      content = catalogue.resource('monitor::process', 'apache_process').send(:parameters)[:enable]
-      content.should == false
-    end
-    it 'should remove a firewall rule' do
-      content = catalogue.resource('firewall', 'apache_tcp_42').send(:parameters)[:enable]
-      content.should == false
-    end
-  end
-
-  describe 'Test decommissioning - disable' do
-    let(:params) { {:disable => true, :monitor => true , :firewall => true, :port => '42'} }
-
-    it { should contain_package('apache').with_ensure('present') }
-    it 'should stop Service[apache]' do should contain_service('apache').with_ensure('stopped') end
-    it 'should not enable at boot Service[apache]' do should contain_service('apache').with_enable('false') end
-    it { should contain_file('apache.conf').with_ensure('present') }
-    it 'should not monitor the process' do
-      content = catalogue.resource('monitor::process', 'apache_process').send(:parameters)[:enable]
-      content.should == false
-    end
-    it 'should remove a firewall rule' do
-      content = catalogue.resource('firewall', 'apache_tcp_42').send(:parameters)[:enable]
-      content.should == false
-    end
-  end
-
-  describe 'Test decommissioning - disableboot' do
-    let(:params) { {:disableboot => true, :monitor => true , :firewall => true, :port => '42'} }
-  
-    it { should contain_package('apache').with_ensure('present') }
-    it { should_not contain_service('apache').with_ensure('present') }
-    it { should_not contain_service('apache').with_ensure('absent') }
-    it 'should not enable at boot Service[apache]' do should contain_service('apache').with_enable('false') end
-    it { should contain_file('apache.conf').with_ensure('present') }
-    it 'should not monitor the process locally' do
-      content = catalogue.resource('monitor::process', 'apache_process').send(:parameters)[:enable]
-      content.should == false
-    end
-    it 'should keep a firewall rule' do
-      content = catalogue.resource('firewall', 'apache_tcp_42').send(:parameters)[:enable]
-      content.should == true
-    end
-  end 
-
-  describe 'Test customizations - template' do
-    let(:params) { {:template => "apache/spec.erb" , :options => { 'opt_a' => 'value_a' } } }
-
-    it 'should generate a valid template' do
-      content = catalogue.resource('file', 'apache.conf').send(:parameters)[:content]
-      content.should match "fqdn: rspec.example42.com"
-    end
-    it 'should generate a template that uses custom options' do
-      content = catalogue.resource('file', 'apache.conf').send(:parameters)[:content]
-      content.should match "value_a"
+    it { should include_class("apache::params") }
+    it { should contain_package("httpd").with(
+      'notify' => 'Class[Apache::Service]'
+      )
+    }
+    it { should contain_user("www-data") }
+    it { should contain_group("www-data") }
+    it { should contain_class("apache::service") }
+    it { should contain_file("/etc/apache2/sites-enabled").with(
+      'ensure'  => 'directory',
+      'recurse' => 'true',
+      'purge'   => 'true',
+      'notify'  => 'Class[Apache::Service]',
+      'require' => 'Package[httpd]'
+      )
+    }
+    it { should contain_file("/etc/apache2/mods-enabled").with(
+      'ensure'  => 'directory',
+      'recurse' => 'true',
+      'purge'   => 'true',
+      'notify'  => 'Class[Apache::Service]',
+      'require' => 'Package[httpd]'
+      )
+    }
+    it { should contain_file("/etc/apache2/mods-available").with(
+      'ensure'  => 'directory',
+      'recurse' => 'true',
+      'purge'   => 'true',
+      'notify'  => 'Class[Apache::Service]',
+      'require' => 'Package[httpd]'
+      )
+    }
+    it { should contain_concat("/etc/apache2/ports.conf").with(
+      'owner'   => 'root',
+      'group'   => 'root',
+      'mode'    => '0644',
+      'notify'  => 'Class[Apache::Service]'
+      )
+    }
+    # Assert that load files are placed and symlinked for these mods, but no conf file.
+    [
+      'auth_basic',
+      'authn_file',
+      'authz_default',
+      'authz_groupfile',
+      'authz_host',
+      'authz_user',
+      'dav',
+      'env'
+    ].each do |modname|
+      it { should contain_file("#{modname}.load").with(
+        'path'   => "/etc/apache2/mods-available/#{modname}.load",
+        'ensure' => 'file'
+      ) }
+      it { should contain_file("#{modname}.load symlink").with(
+        'path'   => "/etc/apache2/mods-enabled/#{modname}.load",
+        'ensure' => 'link',
+        'target' => "/etc/apache2/mods-available/#{modname}.load"
+      ) }
+      it { should_not contain_file("#{modname}.conf") }
+      it { should_not contain_file("#{modname}.conf symlink") }
     end
 
-  end
-
-  describe 'Test customizations - source' do
-    let(:params) { {:source => "puppet://modules/apache/spec" , :source_dir => "puppet://modules/apache/dir/spec" , :source_dir_purge => true } }
-
-    it 'should request a valid source ' do
-      content = catalogue.resource('file', 'apache.conf').send(:parameters)[:source]
-      content.should == "puppet://modules/apache/spec"
-    end
-    it 'should request a valid source dir' do
-      content = catalogue.resource('file', 'apache.dir').send(:parameters)[:source]
-      content.should == "puppet://modules/apache/dir/spec"
-    end
-    it 'should purge source dir if source_dir_purge is true' do
-      content = catalogue.resource('file', 'apache.dir').send(:parameters)[:purge]
-      content.should == true
+    # Assert that both load files and conf files are placed and symlinked for these mods
+    [
+      'alias',
+      'autoindex',
+      'dav_fs',
+      'deflate',
+      'dir',
+      'mime',
+      'negotiation',
+      'setenvif',
+    ].each do |modname|
+      it { should contain_file("#{modname}.load").with(
+        'path'   => "/etc/apache2/mods-available/#{modname}.load",
+        'ensure' => 'file'
+      ) }
+      it { should contain_file("#{modname}.load symlink").with(
+        'path'   => "/etc/apache2/mods-enabled/#{modname}.load",
+        'ensure' => 'link',
+        'target' => "/etc/apache2/mods-available/#{modname}.load"
+      ) }
+      it { should contain_file("#{modname}.conf").with(
+        'path'   => "/etc/apache2/mods-available/#{modname}.conf",
+        'ensure' => 'file'
+      ) }
+      it { should contain_file("#{modname}.conf symlink").with(
+        'path'   => "/etc/apache2/mods-enabled/#{modname}.conf",
+        'ensure' => 'link',
+        'target' => "/etc/apache2/mods-available/#{modname}.conf"
+      ) }
     end
   end
+  context "on a RedHat 5 OS" do
+    let :facts do
+      {
+        :osfamily               => 'RedHat',
+        :operatingsystemrelease => '5',
+        :concat_basedir         => '/dne',
+      }
+    end
+    it { should include_class("apache::params") }
+    it { should contain_package("httpd").with(
+      'notify' => 'Class[Apache::Service]'
+      )
+    }
+    it { should contain_user("apache") }
+    it { should contain_group("apache") }
+    it { should contain_class("apache::service") }
+    it { should contain_file("/etc/httpd/conf.d").with(
+      'ensure'  => 'directory',
+      'recurse' => 'true',
+      'purge'   => 'true',
+      'notify'  => 'Class[Apache::Service]',
+      'require' => 'Package[httpd]'
+      )
+    }
+    it { should contain_concat("/etc/httpd/conf/ports.conf").with(
+      'owner'   => 'root',
+      'group'   => 'root',
+      'mode'    => '0644',
+      'notify'  => 'Class[Apache::Service]'
+      )
+    }
+    describe "Alternate confd/mod/vhosts directory" do
+      let :params do
+        {
+          :vhost_dir => '/etc/httpd/site.d',
+          :confd_dir => '/etc/httpd/conf.d',
+          :mod_dir   => '/etc/httpd/mod.d',
+        }
+      end
 
-  describe 'Test customizations - custom class' do
-    let(:params) { {:my_class => "apache::spec" } }
-    it 'should automatically include a custom class' do
-      content = catalogue.resource('file', 'apache.conf').send(:parameters)[:content]
-      content.should match "fqdn: rspec.example42.com"
+      ['mod.d','site.d','conf.d'].each do |dir|
+        it { should contain_file("/etc/httpd/#{dir}").with(
+          'ensure'  => 'directory',
+          'recurse' => 'true',
+          'purge'   => 'true',
+          'notify'  => 'Class[Apache::Service]',
+          'require' => 'Package[httpd]'
+        ) }
+      end
+
+      # Assert that load files are placed for these mods, but no conf file.
+      [
+        'auth_basic',
+        'authn_file',
+        'authz_default',
+        'authz_groupfile',
+        'authz_host',
+        'authz_user',
+        'dav',
+        'env',
+      ].each do |modname|
+        it { should contain_file("#{modname}.load").with_path(
+          "/etc/httpd/mod.d/#{modname}.load"
+        ) }
+        it { should_not contain_file("#{modname}.conf").with_path(
+          "/etc/httpd/mod.d/#{modname}.conf"
+        ) }
+      end
+
+      # Assert that both load files and conf files are placed for these mods
+      [
+        'alias',
+        'autoindex',
+        'dav_fs',
+        'deflate',
+        'dir',
+        'mime',
+        'negotiation',
+        'setenvif',
+      ].each do |modname|
+        it { should contain_file("#{modname}.load").with_path(
+          "/etc/httpd/mod.d/#{modname}.load"
+        ) }
+        it { should contain_file("#{modname}.conf").with_path(
+          "/etc/httpd/mod.d/#{modname}.conf"
+        ) }
+      end
+
+      it { should contain_file("/etc/httpd/conf/httpd.conf").with_content %r{^Include /etc/httpd/conf\.d/\*\.conf$} }
+      it { should contain_file("/etc/httpd/conf/httpd.conf").with_content %r{^Include /etc/httpd/site\.d/\*\.conf$} }
+      it { should contain_file("/etc/httpd/conf/httpd.conf").with_content %r{^Include /etc/httpd/mod\.d/\*\.conf$} }
+      it { should contain_file("/etc/httpd/conf/httpd.conf").with_content %r{^Include /etc/httpd/mod\.d/\*\.load$} }
+    end
+
+    describe "Alternate conf.d directory" do
+      let :params do
+        { :confd_dir => '/etc/httpd/special_conf.d' }
+      end
+
+      it { should contain_file("/etc/httpd/special_conf.d").with(
+        'ensure'  => 'directory',
+        'recurse' => 'true',
+        'purge'   => 'true',
+        'notify'  => 'Class[Apache::Service]',
+        'require' => 'Package[httpd]'
+      ) }
+    end
+
+    describe "Alternate mpm_modules" do
+      context "when declaring mpm_module is false" do
+        let :params do
+          { :mpm_module => false }
+        end
+        it 'should not declare mpm modules' do
+          should_not contain_class('apache::mod::itk')
+          should_not contain_class('apache::mod::prefork')
+          should_not contain_class('apache::mod::worker')
+        end
+      end
+      context "when declaring mpm_module => prefork" do
+        let :params do
+          { :mpm_module => 'prefork' }
+        end
+        it { should contain_class('apache::mod::prefork') }
+        it { should_not contain_class('apache::mod::itk') }
+        it { should_not contain_class('apache::mod::worker') }
+      end
+      context "when declaring mpm_module => worker" do
+        let :params do
+          { :mpm_module => 'worker' }
+        end
+        it { should contain_class('apache::mod::worker') }
+        it { should_not contain_class('apache::mod::itk') }
+        it { should_not contain_class('apache::mod::prefork') }
+      end
+      context "when declaring mpm_module => breakme" do
+        let :params do
+          { :mpm_module => 'breakme' }
+        end
+        it { expect { should contain_class('apache::params') }.to raise_error Puppet::Error, /does not match/ }
+      end
+    end
+
+    describe "different templates for httpd.conf" do
+      context "with default" do
+        let :params do
+          { :conf_template => 'apache/httpd.conf.erb' }
+        end
+        it { should contain_file("/etc/httpd/conf/httpd.conf").with_content %r{^# Security\n} }
+      end
+      context "with non-default" do
+        let :params do
+          { :conf_template => 'site_apache/fake.conf.erb' }
+        end
+        it { should contain_file("/etc/httpd/conf/httpd.conf").with_content %r{^Fake template for rspec.$} }
+      end
+    end
+
+    describe "default mods" do
+      context "without" do
+        let :params do
+          { :default_mods => false }
+        end
+
+        it { should contain_apache__mod('authz_host') }
+        it { should_not contain_apache__mod('env') }
+      end
+      context "custom" do
+        let :params do
+          { :default_mods => [
+            'info',
+            'alias',
+            'mime',
+            'env',
+            'setenv',
+            'expires',
+          ]}
+        end
+
+        it { should contain_apache__mod('authz_host') }
+        it { should contain_apache__mod('env') }
+        it { should contain_class('apache::mod::info') }
+        it { should contain_class('apache::mod::mime') }
+      end
     end
   end
-
-  describe 'Test service autorestart' do
-    it 'should automatically restart the service, by default' do
-      content = catalogue.resource('file', 'apache.conf').send(:parameters)[:notify]
-      content.should == "Service[apache]"
-    end
-  end
-
-  describe 'Test service autorestart' do
-    let(:params) { {:service_autorestart => "no" } }
-
-    it 'should not automatically restart the service, when service_autorestart => false' do
-      content = catalogue.resource('file', 'apache.conf').send(:parameters)[:notify]
-      content.should be_nil
-    end
-  end
-
-  describe 'Test Puppi Integration' do
-    let(:params) { {:puppi => true, :puppi_helper => "myhelper"} }
-
-    it 'should generate a puppi::ze define' do
-      content = catalogue.resource('puppi::ze', 'apache').send(:parameters)[:helper]
-      content.should == "myhelper"
-    end
-  end
-
-  describe 'Test Monitoring Tools Integration' do
-    let(:params) { {:monitor => true, :monitor_tool => "puppi" } }
-
-    it 'should generate monitor defines' do
-      content = catalogue.resource('monitor::process', 'apache_process').send(:parameters)[:tool]
-      content.should == "puppi"
-    end
-  end
-
-  describe 'Test Firewall Tools Integration' do
-    let(:params) { {:firewall => true, :firewall_tool => "iptables" , :protocol => "tcp" , :port => "42" } }
-
-    it 'should generate correct firewall define' do
-      content = catalogue.resource('firewall', 'apache_tcp_42').send(:parameters)[:tool]
-      content.should == "iptables"
-    end
-  end
-
-  describe 'Test OldGen Module Set Integration' do
-    let(:params) { {:monitor => "yes" , :monitor_tool => "puppi" , :firewall => "yes" , :firewall_tool => "iptables" , :puppi => "yes" , :port => "42" } }
-
-    it 'should generate monitor resources' do
-      content = catalogue.resource('monitor::process', 'apache_process').send(:parameters)[:tool]
-      content.should == "puppi"
-    end
-    it 'should generate firewall resources' do
-      content = catalogue.resource('firewall', 'apache_tcp_42').send(:parameters)[:tool]
-      content.should == "iptables"
-    end
-    it 'should generate puppi resources ' do 
-      content = catalogue.resource('puppi::ze', 'apache').send(:parameters)[:ensure]
-      content.should == "present"
-    end
-  end
-
-  describe 'Test params lookup' do
-    let(:facts) { { :monitor => true , :ipaddress => '10.42.42.42' } }
-    let(:params) { { :port => '42' , :monitor_tool => 'puppi' } }
-
-    it 'should honour top scope global vars' do
-      content = catalogue.resource('monitor::process', 'apache_process').send(:parameters)[:enable]
-      content.should == true
-    end
-  end
-
-  describe 'Test params lookup' do
-    let(:facts) { { :apache_monitor => true , :ipaddress => '10.42.42.42' } }
-    let(:params) { { :port => '42' , :monitor_tool => 'puppi' } }
-
-    it 'should honour module specific vars' do
-      content = catalogue.resource('monitor::process', 'apache_process').send(:parameters)[:enable]
-      content.should == true
-    end
-  end
-
-  describe 'Test params lookup' do
-    let(:facts) { { :monitor => false , :apache_monitor => true , :ipaddress => '10.42.42.42' } }
-    let(:params) { { :port => '42' , :monitor_tool => 'puppi' } }
-
-    it 'should honour top scope module specific over global vars' do
-      content = catalogue.resource('monitor::process', 'apache_process').send(:parameters)[:enable]
-      content.should == true
-    end
-  end
-
-  describe 'Test params lookup' do
-    let(:facts) { { :monitor => false , :ipaddress => '10.42.42.42' } }
-    let(:params) { { :monitor => true , :monitor_tool => 'puppi' , :firewall => true, :port => '42' } }
-
-    it 'should honour passed params over global vars' do
-      content = catalogue.resource('monitor::process', 'apache_process').send(:parameters)[:enable]
-      content.should == true
-    end
-  end
-
 end
-

@@ -1,0 +1,12 @@
+IPs:
+  publicIP:
+      eth: eth0
+      ip: DHCP
+  backnet1:
+      eth: eth1
+      ip: 192.168.56.112
+      netmask: 255.255.255.0
+  backnet2:
+      eth: eth2
+      ip: 192.168.100.112
+      netmask: 255.255.255.0

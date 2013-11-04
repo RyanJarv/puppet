@@ -1,260 +1,413 @@
-# = Define: apache::vhost
+# Definition: apache::vhost
 #
-# This class manages Apache Virtual Hosts configuration files
+# This class installs Apache Virtual Hosts
 #
-# == Parameters:
-# [*port*]
-#   The port to configure the host on
+# Parameters:
+# - The $port to configure the host on
+# - The $docroot provides the DocumentRoot variable
+# - The $virtual_docroot provides VirtualDocumentationRoot variable
+# - The $serveradmin will specify an email address for Apache that it will
+#   display when it renders one of it's error pages
+# - The $ssl option is set true or false to enable SSL for this Virtual Host
+# - The $priority of the site
+# - The $servername is the primary name of the virtual host
+# - The $serveraliases of the site
+# - The $options for the given vhost
+# - The $override for the given vhost (list of AllowOverride arguments)
+# - The $vhost_name for name based virtualhosting, defaulting to *
+# - The $logroot specifies the location of the virtual hosts logfiles, default
+#   to /var/log/<apache log location>/
+# - The $access_log specifies if *_access.log directives should be configured.
+# - The $ensure specifies if vhost file is present or absent.
+# - The $request_headers is a list of RequestHeader statement strings as per http://httpd.apache.org/docs/2.2/mod/mod_headers.html#requestheader
+# - $aliases is a list of Alias hashes for mod_alias as per http://httpd.apache.org/docs/current/mod/mod_alias.html
+#   each statement is a hash in the form of { alias => '/alias', path => '/real/path/to/directory' }
+# - $directories is a lost of hashes for creating <Directory> statements as per http://httpd.apache.org/docs/2.2/mod/core.html#directory
+#   each statement is a hash in the form of { path => '/path/to/directory', <directive> => <value>}
+#   see README.md for list of supported directives.
 #
-# [*docroot*]
-#   The VirtualHost DocumentRoot
+# Actions:
+# - Install Apache Virtual Hosts
 #
-# [*docroot_create*]
-#   If the specified directory has to be created. Default: false
+# Requires:
+# - The apache class
 #
-# [*ssl*]
-#   Set to true to enable SSL for this Virtual Host
+# Sample Usage:
 #
-# [*template*]
-#   Specify a custom template to use instead of the default one
-#   The value will be used in content => template($template)
-#
-# [*source*]
-#   Source file for vhost. Alternative to template.
-#   Note that if you decide to source a static file most of the other
-#   parameters of this define won't be used.
-#   Note also that if you set a source file, you've to explicitly set
-#   the template parameter to undef.
-#
-# [*priority*]
-#   The priority of the VirtualHost, lower values are evaluated first
-#   Set to '' to edit default apache value
-#
-# [*serveraliases*]
-#   An optional list of space separated ServerAliases
-#
-# [*env_variables*]
-#   An optional list of space separated environment variables (e.g ['APP_ENV dev'])
-#
-# [*server_admin*]
-#   Server admin email address
-#
-# [*server_name*]
-#   An optional way to directly set server name
-#   False mean, that servername is not present in generated config file
-#
-# [*passenger*]
-#   If Passenger should be enabled
-#
-# [*passenger_high_performance*]
-#   Set the PassengerHighPerformance directive
-#
-# [*passenger_pool_max_pool_size*]
-#   Set the PassengerMaxPoolSize directive
-#
-# [*passenger_pool_idle_time*]
-#   Set the PassengerPoolIdleTime directive
-#
-# [*passenger_max_requests*]
-#   Set the PassengerMaxRequests directive
-#
-# [*passenger_stat_throttle_rate*]
-#   Set the PassengerStatThrottleRate directive
-#
-# [*passenger_rack_auto_detect*]
-#   Set the RackAutoDetect directive
-#
-# [*passenger_rails_auto_detect*]
-#   Set the RailsAutoDetect directive
-#
-# [*passenger_rails_env*]
-#   Set the RailsEnv directive
-#
-# [*passenger_rails_base_uri*]
-#   Set the RackBaseURI directive
-#
-# [*passenger_rack_env*]
-#   Set the RackEnv directive
-#
-# [*passenger_rack_base_uri*]
-#   Set the RackBaseURI directive
-#
-# [*directory*]
-#   Set the VHost directory used for the <Directory> directive
-#
-# [*directory_options*]
-#   Set the directory's Options
-#
-# [*directory_allow_override*]
-#   Set the directory's override configuration
-#
-# [*aliases*]
-#   Set one or more Alias directives (e.g '/phpmyadmin /usr/share/phpMyAdmin'
-#   or ['/alias1 /path/to/alias', '/alias2 /path/to/secondalias'])
-#
-# == Examples:
+#  # Simple vhost definition:
 #  apache::vhost { 'site.name.fqdn':
-#    docroot  => '/path/to/docroot',
+#    port => '80',
+#    docroot => '/path/to/docroot',
 #  }
 #
-#  apache::vhost { 'mysite':
-#    docroot  => '/path/to/docroot',
-#    template => 'myproject/apache/mysite.conf',
+#  # SSL vhost with non-SSL rewrite:
+#  apache::vhost { 'site.name.fqdn':
+#    port    => '443',
+#    ssl     => true,
+#    docroot => '/path/to/docroot',
+#  }
+#  apache::vhost { 'site.name.fqdn':
+#    port          => '80',
+#    rewrite_cond => '%{HTTPS} off',
+#    rewrite_rule => '(.*) https://%{HTTPS_HOST}%{REQUEST_URI}',
+#  }
+#  apache::vhost { 'site.name.fqdn':
+#    port            => '80',
+#    docroot         => '/path/to/other_docroot',
+#    custom_fragment => template("${module_name}/my_fragment.erb"),
 #  }
 #
-#  apache::vhost { 'my.other.site':
-#    docroot                    => '/path/to/docroot',
-#    directory                  => '/path/to',
-#    directory_allow_override   => 'All',
-#  }
-#
-#  apache::vhost { 'sitewithalias':
-#    docroot                    => '/path/to/docroot',
-#    aliases                    => '/phpmyadmin /usr/share/phpMyAdmin',
-#  }
-#
-define apache::vhost (
-  $server_admin                 = '',
-  $server_name                  = '',
-  $docroot                      = '',
-  $docroot_create               = false,
-  $docroot_owner                = 'root',
-  $docroot_group                = 'root',
-  $port                         = '80',
-  $ssl                          = false,
-  $template                     = 'apache/virtualhost/vhost.conf.erb',
-  $source                       = '',
-  $priority                     = '50',
-  $serveraliases                = '',
-  $env_variables                = '',
-  $passenger                    = false,
-  $passenger_high_performance   = true,
-  $passenger_max_pool_size      = 12,
-  $passenger_pool_idle_time     = 1200,
-  $passenger_max_requests       = 0,
-  $passenger_stat_throttle_rate = 30,
-  $passenger_rack_auto_detect   = true,
-  $passenger_rails_auto_detect  = false,
-  $passenger_rails_env          = '',
-  $passenger_rails_base_uri     = '',
-  $passenger_rack_env           = '',
-  $passenger_rack_base_uri      = '',
-  $enable                       = true,
-  $directory                    = '',
-  $directory_options            = '',
-  $directory_allow_override     = 'None',
-  $aliases                      = ''
-) {
-
-  $ensure = $enable ? {
-        true => present,
-        false => present,
-        absent => absent,
+define apache::vhost(
+    $docroot,
+    $virtual_docroot             = false,
+    $port                        = undef,
+    $ip                          = undef,
+    $ip_based                    = false,
+    $add_listen                  = true,
+    $docroot_owner               = 'root',
+    $docroot_group               = 'root',
+    $serveradmin                 = false,
+    $ssl                         = false,
+    $ssl_cert                    = $apache::default_ssl_cert,
+    $ssl_key                     = $apache::default_ssl_key,
+    $ssl_chain                   = $apache::default_ssl_chain,
+    $ssl_ca                      = $apache::default_ssl_ca,
+    $ssl_crl_path                = $apache::default_ssl_crl_path,
+    $ssl_crl                     = $apache::default_ssl_crl,
+    $ssl_certs_dir               = $apache::params::ssl_certs_dir,
+    $priority                    = undef,
+    $default_vhost               = false,
+    $servername                  = $name,
+    $serveraliases               = [],
+    $options                     = ['Indexes','FollowSymLinks','MultiViews'],
+    $override                    = ['None'],
+    $vhost_name                  = '*',
+    $logroot                     = $apache::logroot,
+    $access_log                  = true,
+    $access_log_file             = undef,
+    $access_log_pipe             = undef,
+    $access_log_syslog           = undef,
+    $access_log_format           = undef,
+    $aliases                     = undef,
+    $directories                 = undef,
+    $error_log                   = true,
+    $error_log_file              = undef,
+    $error_log_pipe              = undef,
+    $error_log_syslog            = undef,
+    $scriptalias                 = undef,
+    $proxy_dest                  = undef,
+    $proxy_pass                  = undef,
+    $sslproxyengine              = false,
+    $suphp_addhandler            = $apache::params::suphp_addhandler,
+    $suphp_engine                = $apache::params::suphp_engine,
+    $suphp_configpath            = $apache::params::suphp_configpath,
+    $no_proxy_uris               = [],
+    $redirect_source             = '/',
+    $redirect_dest               = undef,
+    $redirect_status             = undef,
+    $rack_base_uris              = undef,
+    $request_headers             = undef,
+    $rewrite_rule                = undef,
+    $rewrite_cond                = undef,
+    $setenv                      = [],
+    $setenvif                    = [],
+    $block                       = [],
+    $ensure                      = 'present',
+    $wsgi_daemon_process         = undef,
+    $wsgi_daemon_process_options = undef,
+    $wsgi_process_group          = undef,
+    $wsgi_script_aliases         = undef,
+    $custom_fragment             = undef,
+    $itk                         = undef
+  ) {
+  # The base class must be included first because it is used by parameter defaults
+  if ! defined(Class['apache']) {
+    fail('You must include the apache base class before using any apache defined resources')
   }
-  $bool_docroot_create               = any2bool($docroot_create)
-  $bool_passenger                    = any2bool($passenger)
-  $bool_passenger_high_performance   = any2bool($passenger_high_performance)
-  $bool_passenger_rack_auto_detect   = any2bool($passenger_rack_auto_detect)
-  $bool_passenger_rails_auto_detect  = any2bool($passenger_rails_auto_detect)
+  $apache_name = $apache::params::apache_name
 
-  $real_docroot = $docroot ? {
-    ''      => "${apache::data_dir}/${name}",
-    default => $docroot,
+  validate_re($ensure, '^(present|absent)$',
+  "${ensure} is not supported for ensure.
+  Allowed values are 'present' and 'absent'.")
+  validate_re($suphp_engine, '^(on|off)$',
+  "${suphp_engine} is not supported for suphp_engine.
+  Allowed values are 'on' and 'off'.")
+  validate_bool($ip_based)
+  validate_bool($access_log)
+  validate_bool($error_log)
+  validate_bool($ssl)
+  validate_bool($default_vhost)
+  validate_bool($sslproxyengine)
+  if $wsgi_script_aliases {
+    validate_hash($wsgi_script_aliases)
   }
-
-  $real_directory = $directory ? {
-    ''      => $apache::data_dir,
-    default => $directory,
+  if $wsgi_daemon_process_options {
+    validate_hash($wsgi_daemon_process_options)
   }
-
-  $server_name_value = $server_name ? {
-    ''      => $name,
-    default => $server_name,
-  }
-
-  $manage_file_source = $source ? {
-    ''      => undef,
-    default => $source,
-  }
-
-  # Server admin email
-  if $server_admin != '' {
-    $server_admin_email = $server_admin
-  } elsif ($name != 'default') and ($name != 'default-ssl') {
-    $server_admin_email = "webmaster@${name}"
-  } else {
-    $server_admin_email = 'webmaster@localhost'
-  }
-
-  # Config file path
-  if $priority != '' {
-    $config_file_path = "${apache::vdir}/${priority}-${name}.conf"
-  } elsif ($name != 'default') and ($name != 'default-ssl') {
-    $config_file_path = "${apache::vdir}/${name}.conf"
-  } else {
-    $config_file_path = "${apache::vdir}/${name}"
+  if $itk {
+    validate_hash($itk)
   }
 
-  # Config file enable path
-  if $priority != '' {
-    $config_file_enable_path = "${apache::config_dir}/sites-enabled/${priority}-${name}.conf"
-  } elsif ($name != 'default') and ($name != 'default-ssl') {
-    $config_file_enable_path = "${apache::config_dir}/sites-enabled/${name}.conf"
-  } else {
-    $config_file_enable_path = "${apache::config_dir}/sites-enabled/000-${name}"
+  if $access_log_file and $access_log_pipe {
+    fail("Apache::Vhost[${name}]: 'access_log_file' and 'access_log_pipe' cannot be defined at the same time")
   }
 
-  $manage_file_content = $template ? {
-    ''      => undef,
-    undef   => undef,
-    default => template($template),
+  if $error_log_file and $error_log_pipe {
+    fail("Apache::Vhost[${name}]: 'error_log_file' and 'error_log_pipe' cannot be defined at the same time")
   }
 
-  include apache
-
-  file { $config_file_path:
-    ensure  => $ensure,
-    source  => $manage_file_source,
-    content => $manage_file_content,
-    mode    => $apache::config_file_mode,
-    owner   => $apache::config_file_owner,
-    group   => $apache::config_file_group,
-    require => Package['apache'],
-    notify  => $apache::manage_service_autorestart,
+  if $ssl {
+    include apache::mod::ssl
   }
 
-  # Some OS specific settings:
-  # On Debian/Ubuntu manages sites-enabled
-  case $::operatingsystem {
-    ubuntu,debian,mint: {
-      $file_vhost_link_ensure = $enable ? {
-        true  => $config_file_path,
-        false => absent,
-      }
-      file { "ApacheVHostEnabled_${name}":
-        ensure  => $file_vhost_link_ensure,
-        path    => $config_file_enable_path,
-        require => Package['apache'],
-      }
-    }
-    redhat,centos,scientific,fedora: {
-      include apache::redhat
-    }
-    default: { }
+  if $virtual_docroot {
+    include apache::mod::vhost_alias
   }
 
-  if $bool_docroot_create == true {
-    file { $real_docroot:
+  # This ensures that the docroot exists
+  # But enables it to be specified across multiple vhost resources
+  if ! defined(File[$docroot]) {
+    file { $docroot:
       ensure  => directory,
       owner   => $docroot_owner,
       group   => $docroot_group,
-      mode    => '0775',
-      require => Package['apache'],
+      require => Package['httpd'],
     }
   }
 
-  if $bool_passenger == true {
-    include apache::passenger
+  # Same as above, but for logroot
+  if ! defined(File[$logroot]) {
+    file { $logroot:
+      ensure  => directory,
+      require => Package['httpd'],
+    }
+  }
+
+
+  # Is apache::mod::passenger enabled (or apache::mod['passenger'])
+  $passenger_enabled = defined(Apache::Mod['passenger'])
+
+  # Define log file names
+  if $access_log_file {
+    $access_log_destination = "${logroot}/${access_log_file}"
+  } elsif $access_log_pipe {
+    $access_log_destination = "\"${access_log_pipe}\""
+  } elsif $access_log_syslog {
+    $access_log_destination = "${access_log_syslog}"
+  } else {
+    if $ssl {
+      $access_log_destination = "${logroot}/${servername}_access_ssl.log"
+    } else {
+      $access_log_destination = "${logroot}/${servername}_access.log"
+    }
+  }
+
+  if $error_log_file {
+    $error_log_destination = "${logroot}/${error_log_file}"
+  } elsif $error_log_pipe {
+    $error_log_destination = "\"${error_log_pipe}\""
+  } elsif $error_log_syslog {
+    $error_log_destination = "${error_log_syslog}"
+  } else {
+    if $ssl {
+      $error_log_destination = "${logroot}/${servername}_error_ssl.log"
+    } else {
+      $error_log_destination = "${logroot}/${servername}_error.log"
+    }
+  }
+
+  # Set access log format
+  if $access_log_format {
+    $_access_log_format = "\"${access_log_format}\""
+  } else {
+    $_access_log_format = 'combined'
+  }
+
+
+  if $ip {
+    if $port {
+      $listen_addr_port = "${ip}:${port}"
+      $nvh_addr_port = "${ip}:${port}"
+    } else {
+      $nvh_addr_port = $ip
+      if ! $servername and ! $ip_based {
+        fail("Apache::Vhost[${name}]: must pass 'ip' and/or 'port' parameters for name-based vhosts")
+      }
+    }
+  } else {
+    if $port {
+      $listen_addr_port = $port
+      $nvh_addr_port = "${vhost_name}:${port}"
+    } else {
+      $nvh_addr_port = $name
+      if ! $servername {
+        fail("Apache::Vhost[${name}]: must pass 'ip' and/or 'port' parameters, and/or 'servername' parameter")
+      }
+    }
+  }
+  if $add_listen {
+    if $ip and defined(Apache::Listen[$port]) {
+      fail("Apache::Vhost[${name}]: Mixing IP and non-IP Listen directives is not possible; check the add_listen parameter of the apache::vhost define to disable this")
+    }
+    if ! defined(Apache::Listen[$listen_addr_port]) and $listen_addr_port {
+      apache::listen { $listen_addr_port: }
+    }
+  }
+  if ! $ip_based {
+    if ! defined(Apache::Namevirtualhost[$nvh_addr_port]) {
+      apache::namevirtualhost { $nvh_addr_port: }
+    }
+  }
+
+  # Load mod_rewrite if needed and not yet loaded
+  if $rewrite_rule {
+    if ! defined(Apache::Mod['rewrite']) {
+      apache::mod { 'rewrite': }
+    }
+  }
+
+  # Load mod_alias if needed and not yet loaded
+  if $scriptalias or ($redirect_source and $redirect_dest) {
+    if ! defined(Class['apache::mod::alias']) {
+      include apache::mod::alias
+    }
+  }
+
+  # Load mod_proxy if needed and not yet loaded
+  if ($proxy_dest or $proxy_pass) {
+    if ! defined(Class['apache::mod::proxy']) {
+      include apache::mod::proxy
+    }
+  }
+
+  # Load mod_passenger if needed and not yet loaded
+  if $rack_base_uris {
+    if ! defined(Class['apache::mod::passenger']) {
+      include apache::mod::passenger
+    }
+  }
+
+  # Configure the defaultness of a vhost
+  if $priority {
+    $priority_real = $priority
+  } elsif $default_vhost {
+    $priority_real = '10'
+  } else {
+    $priority_real = '25'
+  }
+
+  # Check if mod_headers is required to process $request_headers
+  if $request_headers {
+    if ! defined(Class['apache::mod::headers']) {
+      include apache::mod::headers
+    }
+  }
+
+  ## Apache include does not always work with spaces in the filename
+  $filename = regsubst($name, ' ', '_', 'G')
+
+  ## Create a default directory list if none defined
+  if $directories {
+    $_directories = $directories
+  } else {
+    $_directories = [ {
+      provider       => 'directory',
+      path           => $docroot,
+      options        => $options,
+      allow_override => $override,
+      order          => 'allow,deny',
+      allow          => 'from all',
+    } ]
+  }
+
+  # Template uses:
+  # - $nvh_addr_port
+  # - $servername
+  # - $serveradmin
+  # - $docroot
+  # - $virtual_docroot
+  # - $options
+  # - $override
+  # - $logroot
+  # - $name
+  # - $aliases
+  # - $_directories
+  # - $access_log
+  # - $access_log_destination
+  # - $_access_log_format
+  # - $error_log
+  # - $error_log_destination
+  # - $custom_fragment
+  # block fragment:
+  #   - $block
+  # directories fragment:
+  #   - $passenger_enabled
+  #   - $directories (a list of key-value hashes is expected)
+  # proxy fragment:
+  #   - $proxy_dest
+  #   - $no_proxy_uris
+  # rack fragment:
+  #   - $rack_base_uris
+  # redirect fragment:
+  #   - $redirect_source
+  #   - $redirect_dest
+  #   - $redirect_status
+  # requestheader fragment:
+  #   - $request_headers
+  # rewrite fragment:
+  #   - $rewrite_rule
+  #   - $rewrite_cond
+  # scriptalias fragment:
+  #   - $scriptalias
+  #   - $ssl
+  # serveralias fragment:
+  #   - $serveraliases
+  # setenv fragment:
+  #   - $setenv
+  #   - $setenvif
+  # ssl fragment:
+  #   - $ssl
+  #   - $ssl_cert
+  #   - $ssl_key
+  #   - $ssl_chain
+  #   - $ssl_certs_dir
+  #   - $ssl_ca
+  #   - $ssl_crl
+  #   - $ssl_crl_path
+  # suphp fragment:
+  #   - $suphp_addhandler
+  #   - $suphp_engine
+  #   - $suphp_configpath
+  # wsgi fragment:
+  #   - $wsgi_daemon_process
+  #   - $wsgi_process_group
+  #   - $wsgi_script_aliases
+  file { "${priority_real}-${filename}.conf":
+    ensure  => $ensure,
+    path    => "${apache::vhost_dir}/${priority_real}-${filename}.conf",
+    content => template('apache/vhost.conf.erb'),
+    owner   => 'root',
+    group   => 'root',
+    mode    => '0644',
+    require => [
+      Package['httpd'],
+      File[$docroot],
+      File[$logroot],
+    ],
+    notify  => Service['httpd'],
+  }
+  if $::osfamily == 'Debian' {
+    $vhost_enable_dir = $apache::vhost_enable_dir
+    file{ "${priority_real}-${filename}.conf symlink":
+      ensure  => link,
+      path    => "${vhost_enable_dir}/${priority_real}-${filename}.conf",
+      target  => "${apache::vhost_dir}/${priority_real}-${filename}.conf",
+      owner   => 'root',
+      group   => 'root',
+      mode    => '0644',
+      require => File["${priority_real}-${filename}.conf"],
+      notify  => Service['httpd'],
+    }
   }
 }
 

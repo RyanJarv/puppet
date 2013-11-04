@@ -1,0 +1,20 @@
+---
+IPs:
+  publicIP:
+      eth: eth0
+      ip: DHCP
+  backnet1:
+      eth: eth1
+      ip: 192.168.56.113
+      netmask: 255.255.255.0
+  backnet2:
+      eth: eth2
+      ip: 192.168.100.113
+      netmask: 255.255.255.0
+
+current_sites:
+  - superwhat.com
+  - andok.org
+  - messedup.what
+  - go.stop
+  - low.high

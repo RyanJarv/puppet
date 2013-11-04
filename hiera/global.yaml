@@ -1,0 +1,5 @@
+---
+#::apache::firewall: true
+#::apache::firewall_tool: 'iptables'
+#::apache::protocol: 'tcp'
+#::apache::port: '80'

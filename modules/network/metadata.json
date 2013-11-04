@@ -1,0 +1,169 @@
+{
+  "name": "adrien-network",
+  "version": "0.4.1",
+  "source": "https://github.com/adrienthebo/puppet-network",
+  "author": "Adrien Thebo <adrien@somethingsinistral.net>",
+  "license": "Apache 2.0",
+  "summary": "Manage non-volatile network configuration",
+  "description": "Manage persistent network interface configuration",
+  "project_page": "https://github.com/adrienthebo/puppet-network",
+  "dependencies": [
+    {
+      "name": "adrien/filemapper",
+      "version_requirement": ">= 1.0.0"
+    },
+    {
+      "name": "adrien/boolean",
+      "version_requirement": ">= 1.0.0"
+    }
+  ],
+  "types": [
+    {
+      "name": "network_route",
+      "doc": "Manage non-volatile route configuration information",
+      "properties": [
+        {
+          "name": "ensure",
+          "doc": "The basic property that the resource should be in.  Valid values are `present`, `absent`."
+        },
+        {
+          "name": "network",
+          "doc": "The target network address"
+        },
+        {
+          "name": "netmask",
+          "doc": "The subnet mask to apply to the route"
+        },
+        {
+          "name": "gateway",
+          "doc": "The gateway to use for the route"
+        },
+        {
+          "name": "interface",
+          "doc": "The interface to use for the route"
+        }
+      ],
+      "parameters": [
+        {
+          "name": "name",
+          "doc": "The name of the network route"
+        }
+      ],
+      "providers": [
+        {
+          "name": "redhat",
+          "doc": "RHEL style routes provider\n\nDefault for `osfamily` == `redhat`."
+        },
+        {
+          "name": "routes",
+          "doc": "Debian routes style provider\n\nDefault for `osfamily` == `debian`."
+        }
+      ]
+    },
+    {
+      "name": "network_config",
+      "doc": "Manage non-volatile network configuration information",
+      "properties": [
+        {
+          "name": "ensure",
+          "doc": "The basic property that the resource should be in.  Valid values are `present`, `absent`."
+        },
+        {
+          "name": "ipaddress",
+          "doc": "The IP address of the network interfaces"
+        },
+        {
+          "name": "netmask",
+          "doc": "The subnet mask to apply to the interface"
+        },
+        {
+          "name": "method",
+          "doc": "The method for determining an IP address for the interface  Valid values are `static` (also called `none`), `manual`, `dhcp`, `loopback`."
+        },
+        {
+          "name": "family",
+          "doc": "The address family to use for the interface  Valid values are `inet`, `inet6`."
+        },
+        {
+          "name": "onboot",
+          "doc": "Whether to bring the interface up on boot"
+        },
+        {
+          "name": "hotplug",
+          "doc": "Allow/disallow hotplug support for this interface  Requires features hotpluggable."
+        },
+        {
+          "name": "options",
+          "doc": "Provider specific options to be passed to the provider  Requires features provider_options."
+        }
+      ],
+      "parameters": [
+        {
+          "name": "name",
+          "doc": "The name of the physical or logical network device"
+        },
+        {
+          "name": "reconfigure",
+          "doc": "Reconfigure the interface after the configuration has been updated  Requires features reconfigurable."
+        }
+      ],
+      "providers": [
+        {
+          "name": "interfaces",
+          "doc": "Debian interfaces style provider\n\nDefault for `osfamily` == `debian`.  Supported features: `hotpluggable`, `provider_options`."
+        },
+        {
+          "name": "redhat",
+          "doc": "Redhat network-scripts provider\n\nDefault for `osfamily` == `redhat`.  Supported features: `hotpluggable`, `provider_options`."
+        }
+      ]
+    }
+  ],
+  "checksums": {
+    "CHANGELOG": "84370177e1e3589b9c4ab6d861f76996",
+    "Gemfile": "ebf91366d44a9d3485e893581855ee4b",
+    "LICENSE": "b43880e14353cbc12cf3981fb93a0944",
+    "Modulefile": "db7409bfdb9475ded4325bf06cefda09",
+    "README.markdown": "d40deaa941c3f84a1e6df6ac2c2c651a",
+    "lib/puppet/provider/network_config/interfaces.rb": "0c5dc64163a628bcaff7b37fb0226581",
+    "lib/puppet/provider/network_config/redhat.rb": "fd7b4d67c097907160b41a1d058b3b55",
+    "lib/puppet/provider/network_route/redhat.rb": "7df01b04caff01c954c881ca1c0b23a9",
+    "lib/puppet/provider/network_route/routes.rb": "a83ce150331e96dd22878bb815e3ccb9",
+    "lib/puppet/type/network_config.rb": "b5b91de997ab01c1d25f48c2d8e015c2",
+    "lib/puppet/type/network_route.rb": "ef88e084d301ac34d01c77c8070766ba",
+    "spec/fixtures/provider/network_config/interfaces_spec/flush_lo_eth0_dhcp": "071c3c3fcf2a11ab6bbc04c86eff0f19",
+    "spec/fixtures/provider/network_config/interfaces_spec/iface_whitespace": "f9d2fd3999c00f36d6b8e4c6dcd69747",
+    "spec/fixtures/provider/network_config/interfaces_spec/loopback": "aecb907526034fa8073cf065205fa24b",
+    "spec/fixtures/provider/network_config/interfaces_spec/single_interface_dhcp": "a3ffafbd004871dc99bb62f148f33101",
+    "spec/fixtures/provider/network_config/interfaces_spec/single_interface_static": "59b0ffce158f1d35ce99511661ba7bcc",
+    "spec/fixtures/provider/network_config/interfaces_spec/three_interface_static": "9f16a0d504fb805fa204bd9d36421beb",
+    "spec/fixtures/provider/network_config/interfaces_spec/two_interface_dhcp": "b21b7b3ee42c1695ae37796636b2efb9",
+    "spec/fixtures/provider/network_config/redhat_spec/eth0-dhcp": "4f3f9b22b9f1a892da42ac876ea4bcb0",
+    "spec/fixtures/provider/network_config/redhat_spec/eth0-hotplug": "fea84d0aeac3ba7d379c635ebe2ee847",
+    "spec/fixtures/provider/network_config/redhat_spec/eth0-nohotplug": "829502a6d86d60b3d9827d84624aa4a0",
+    "spec/fixtures/provider/network_config/redhat_spec/eth0-static": "5bc51a547865717832233d2021fd3526",
+    "spec/fixtures/provider/network_config/redhat_spec/lo": "296c3ca2a7cbf7b22d813fdab155d5fc",
+    "spec/fixtures/provider/network_config/redhat_spec/virbonding/bond0": "74d865fe11bb366a2fad3eb6227616fa",
+    "spec/fixtures/provider/network_config/redhat_spec/virbonding/bond1": "260155895bfce56c97db7d3bef5b44f1",
+    "spec/fixtures/provider/network_config/redhat_spec/virbonding/eth0": "25611bbb046835074e0fd14c3b361e15",
+    "spec/fixtures/provider/network_config/redhat_spec/virbonding/eth1": "4c1a33512a9d6439100b2275f45c96cc",
+    "spec/fixtures/provider/network_config/redhat_spec/virbonding/eth2": "bb1a98e3099015f99ba104461f7dfb10",
+    "spec/fixtures/provider/network_config/redhat_spec/virbonding/eth3": "b0bb17eaeb59768123e96dbdfd73086c",
+    "spec/fixtures/provider/network_config/redhat_spec/virbonding/vlan100": "963fdff7bfa4151de58a7e8357450945",
+    "spec/fixtures/provider/network_config/redhat_spec/virbonding/vlan100_0": "f0db7c991a1807d0bc1aae4f669bc50e",
+    "spec/fixtures/provider/network_config/redhat_spec/virbonding/vlan200": "0c7bb22bcd2f4d1ccb69061667dad334",
+    "spec/fixtures/provider/network_config/redhat_spec/virbonding/vlan300": "43d0f1e79f7909b6f97d9d1a2543b17b",
+    "spec/fixtures/provider/network_config/redhat_spec/virbonding/vlan400": "1eec3d11a0bb7023c6a3227bfd3254fb",
+    "spec/fixtures/provider/network_config/redhat_spec/virbonding/vlan500": "bf0c020303e21ca42a66db65e64cf8f2",
+    "spec/fixtures/provider/network_route/redhat/simple_routes": "5c03a80c47d2b76e5dcd13d01d00199d",
+    "spec/fixtures/provider/network_route/routes_spec/simple_routes": "f159dba2755a2ae815b76ffd22f8f3d4",
+    "spec/spec_helper.rb": "ca8e9e0ef7de79b9942c629aaf1a4880",
+    "spec/travis_rspec.rb": "c16030d548e0d6ab7cf7146c87da90b9",
+    "spec/unit/provider/network_config/interfaces_spec.rb": "3c0f7c8038b2438d8733367b6517b34e",
+    "spec/unit/provider/network_config/redhat_spec.rb": "f38a3ad71c8f859a0c7071f1d42de87d",
+    "spec/unit/provider/network_route/redhat_spec.rb": "ae63afbda3154c6564e4ae41e2f31e13",
+    "spec/unit/provider/network_route/routes_spec.rb": "dd58d352dcef945d975882f196ddf149",
+    "spec/unit/type/network_config_spec.rb": "9ef9681e6a0597321eaefe364e31385b",
+    "spec/unit/type/network_route_spec.rb": "ee420407aefd1e076ce8232bd9f8afa4"
+  }
+}

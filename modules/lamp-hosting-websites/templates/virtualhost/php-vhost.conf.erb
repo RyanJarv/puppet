@@ -1,0 +1,8 @@
+## <Modified>
+## Figure out what this is doing before production
+## This doesn't look right to me
+FastCgiExternalServer /home/<%= @userName %>/<%= @site %>/php5.external -host 127.0.0.1:9000
+AddHandler php5-fcgi .php
+Action php5-fcgi /php5.external
+##
+## </Modified>

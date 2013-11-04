@@ -1,0 +1,100 @@
+---
+## Apache
+apache::default_mods: ['fastcgi', 'actions', 'status', 'mime', 'dir']
+
+## Monitoring IP -- Need to start use this 
+## through out configs
+monitoringIP: 192.168.56.150
+
+## SNMP
+snmp::agentaddress: ['udp:161']
+snmp::ro_community:  'pas'
+snmp::ro_network: '192.168.100.0/24'
+snmp::views: [ 'systemview included .1']
+snmp::contact: 'ryang@dfcolo.com'
+snmp::location: 'Tukwilla DC4'
+
+# VSFTPD
+vsftpd::anonymous_enable: 'NO'
+vsftpd::write_enable: 'YES'
+vsftpd::chroot_local_user: 'YES'
+vsftpd::userlist_enable: 'YES'
+vsftpd::directives: 
+  ssl_enable: 'YES'
+  rsa_cert_file: '/usr/local/ssl/vsftpd.pem'
+  rsa_private_key_file: '/usr/local/ssl/vsftpd.key'
+
+  
+
+
+## SSH
+my_ssh::sshIPs: "192.168.0.0/16"
+
+## Hosts File
+hosts:
+  192.168.100.100:
+    - puppet
+    - puppet.localdomain
+    - learn.localdomain
+    - learn
+  192.168.100.112:
+    - dns.forest.net
+    - dns
+  192.168.100.111:
+    - ubuntu1.forest.net
+    - ubuntu1
+  192.168.100.113:
+    - ubuntu13.forest.net
+    - ubuntu13
+
+
+## DNS Resolver to use
+resolver::dns_servers:
+  - '192.168.100.112'
+
+## DNS Records
+dns::zone::soa: "ns1.puppet.local"
+dns::zone::soa_email: "admin.puppet.local"
+dns::zone::nameservers:
+  - "ns1.puppet.local"
+  - "ns2.puppet.local"
+
+## Users
+# The password hash is for the
+# password 'pas', do not include
+# this in production
+# 
+# tag as admin to disable ftp for the account
+users_sysadmins:
+  ryan:
+    tag:  admin
+    ensure: present
+    uid: 10000
+    groups: [sudo, staff]
+    comment: Ryan Gerstenkorn
+    managehome: true
+    shell: /bin/bash
+    password: '$6$m.QennYY$u1wmV1B8kFXOmKgZ9eaoZhkK9eRzIG7dZ1.bwaNZ/LfLiq9BcPrd8CzKoxm0jsbsp0Kf2mz6QmUeiRP0Pvun00' 
+    ssh_authorized_keys:
+      mykey:
+        type: 'ssh-rsa'
+        key: 'AAAAB3NzaC1yc2EAAAADAQABAAABAQCupC1VnIjvP3nXBGBfW5r3WVC3jlmIiaLmEuAwiAmIqQLsjm6WZoldXx6rxbs7wimgDXILjyEDr8eacEOk09AyelKC93XptgaZl8juzNlvryQQrFtDiu/W2tAmS8/7fsk03I8aqP2McSt2Wkq6KoMoFU4QOIH7ewx5hWpyWIViWd2Z7yf/P6Dz4tHGg8JDsvoc4Kaqj0BM83AHSNQDSsW5izMfUJ0YEMEa9NgJi5VPV6/lypXv3hvw8AZAteoAhgFmaSDJUapMHRKWU54jO6SHVejQ670E9PIiDIzHPVMZdJflVuUiiCzUWKuAgfg82DL/H3U58fEwTQEOl+5Q60pv'
+    sudo_ensure: present
+    sudo_content: "ryan     ALL = ( ALL ) ALL"
+  scott:
+    tag: admin
+    ensure: present
+    uid: 10002
+    groups: [sudo, staff]
+    comment: Scott Gamble
+    managehome: true
+    shell: /bin/bash
+    password: '$6$m.QennYY$u1wmV1B8kFXOmKgZ9eaoZhkK9eRzIG7dZ1.bwaNZ/LfLiq9BcPrd8CzKoxm0jsbsp0Kf2mz6QmUeiRP0Pvun00' 
+  monitor:
+    ensure: present
+    uid: 10003
+#    groups: [sudo, staff]
+    comment: For solar winds monitoring
+    managehome: true
+    shell: /bin/bash
+    password: '$6$m.QennYY$u1wmV1B8kFXOmKgZ9eaoZhkK9eRzIG7dZ1.bwaNZ/LfLiq9BcPrd8CzKoxm0jsbsp0Kf2mz6QmUeiRP0Pvun00' 

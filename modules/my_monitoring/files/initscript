@@ -1,0 +1,115 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          serverscheck
+# Required-Start:    $network
+# Required-Stop:     $network
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: starts serverscheck
+# Description:       Starts the binary used by servers check
+### END INIT INFO
+
+# Author: Ondrej Sury <ondrej@debian.org>
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="serverscheck binary"
+NAME=serverscheck
+DAEMON=/usr/local/bin/$NAME
+DAEMON_ARGS=""
+PIDFILE=/var/run/serverscheck
+TIMEOUT=30
+SCRIPTNAME=/etc/init.d/$NAME
+
+# Exit if the package is not installed
+[ -x "$DAEMON" ] || exit 0
+
+#[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+# Load the VERBOSE setting and other rcS variables
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
+. /lib/lsb/init-functions
+
+
+
+#
+# Function that starts the daemon/service
+#
+do_start()
+{
+  # Return
+  #   0 if daemon has been started
+  #   1 if daemon was already running
+  #   2 if daemon could not be started
+  start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \
+    $DAEMON_ARGS 2>/dev/null &
+  # Add code here, if necessary, that waits for the process to be ready
+  # to handle requests from services started subsequently which depend
+  # on this one.  As a last resort, sleep for some time.
+}
+
+#
+# Function that stops the daemon/service
+#
+do_stop()
+{
+  # Return
+  #   0 if daemon has been stopped
+  #   1 if daemon was already stopped
+  #   2 if daemon could not be stopped
+  #   other if a failure occurred
+  #start-stop-daemon --stop --quiet --retry=QUIT/$TIMEOUT/TERM/5/KILL/5 --pidfile $PIDFILE --name $NAME
+  #RETVAL="$?"
+  #[ "$RETVAL" = 2 ] && return 2
+  # Wait for children to finish too if this is a daemon that forks
+  # and if the daemon is only ever run from this initscript.
+  # If the above conditions are not satisfied then add some other code
+  # that waits for the process to drop all resources that could be
+  # needed by services started subsequently.  A last resort is to
+  # sleep for some time.
+  start-stop-daemon --stop --quiet --oknodo --retry=0/1/TERM/5/KILL/5 --exec $DAEMON
+  RETVAL="$?"
+  #[ "$?" = 2 ] && return 2
+  # Many daemons don't delete their pidfiles when they exit.
+  rm -f $PIDFILE
+  return "$RETVAL"
+}
+
+#
+# Function that sends a SIGHUP to the daemon/service
+#
+do_reload() {
+  #
+  # If the daemon can reload its configuration without
+  # restarting (for example, when it is sent a SIGHUP),
+  # then implement that here.
+  #
+  start-stop-daemon --stop --signal USR2 --quiet --pidfile $PIDFILE --name $NAME
+  return 0
+}
+
+case "$1" in
+  start)
+    do_start
+  ;;
+  stop)
+    do_stop
+  ;;
+  status)
+    status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
+  ;;
+  reload|force-reload)
+    do_reload
+  ;;
+  restart)
+    do_stop
+    do_start
+  ;;
+    *)
+  echo "Usage: $SCRIPTNAME {start|stop|status|restart|reload|force-reload}" >&2
+  exit 1
+    ;;
+esac
+
+:
