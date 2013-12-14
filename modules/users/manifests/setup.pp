@@ -46,8 +46,8 @@ define users::setup($hash) {
           ensure          => $hash[$name]['sudo_ensure'],
           priority        => $hash[$name]['sudo_priority'],
           content         => $hash[$name]['sudo_content'],
-          source          => $hash[$name]['sudo_source'],
-          sudo_config_dir      => $hash[$name]['sudo_config_dir'],
+          #source          => $hash[$name]['sudo_source'],
+          #sudo_config_dir      => $hash[$name]['sudo_config_dir'],
         }
       }
 

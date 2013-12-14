@@ -7,7 +7,7 @@ class my_resolver {
     chain  => 'OUTPUT',
     } 
 
-  ## ubntu uses the resolveconf service instead of /etc/resolv.conf directly
+  ## ubuntu uses the resolveconf service instead of /etc/resolv.conf directly
   ## probably should check for the resolv package instead actually
   if $lsbdistid == "Ubuntu" {
     service { "resolvconf":

@@ -19,7 +19,7 @@
 
 # Define filebucket 'main':
 filebucket { 'main':
-  server => 'learn.localdomain',
+  server => 'master.forest.net',
   path   => false,
 }
 
@@ -42,18 +42,22 @@ node default {
   #   class { 'my_class': }
 }
 
-node 'agent1.localdomain' {
-    include roles::lamp::test
-}
-
-node 'ubuntu1' {
+node 'ubuntu' {
   include roles::lamp::test
 }
 
-node 'ubuntu12' {
-    include roles::linuxDns
-}
-
-node 'ubuntu13' {
-    include roles::lamp::test
-}
+#node 'lu' {
+#  include roles::lamp::test
+#}
+#
+#node 'lu2 {
+#  include roles::webmin
+#}
+#
+#node 'ubuntu12' {
+#    include roles::linuxDns
+#}
+#
+#node 'ubuntu13' {
+#    include roles::lamp::test
+#}

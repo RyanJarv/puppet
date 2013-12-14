@@ -14,6 +14,11 @@ IPs:
       ip: 192.168.100.111
       netmask: 255.255.255.0
 
+hosts:
+  127.0.0.1:
+    - lu
+    - lu.forest.net
+
 current_sites:
   - oiuiuui.com
   - whatever.com

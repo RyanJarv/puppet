@@ -37,6 +37,7 @@ hosts:
     - puppet.localdomain
     - learn.localdomain
     - learn
+    - master.forest.net
   192.168.100.112:
     - dns.forest.net
     - dns
@@ -79,8 +80,9 @@ users_sysadmins:
       mykey:
         type: 'ssh-rsa'
         key: 'AAAAB3NzaC1yc2EAAAADAQABAAABAQCupC1VnIjvP3nXBGBfW5r3WVC3jlmIiaLmEuAwiAmIqQLsjm6WZoldXx6rxbs7wimgDXILjyEDr8eacEOk09AyelKC93XptgaZl8juzNlvryQQrFtDiu/W2tAmS8/7fsk03I8aqP2McSt2Wkq6KoMoFU4QOIH7ewx5hWpyWIViWd2Z7yf/P6Dz4tHGg8JDsvoc4Kaqj0BM83AHSNQDSsW5izMfUJ0YEMEa9NgJi5VPV6/lypXv3hvw8AZAteoAhgFmaSDJUapMHRKWU54jO6SHVejQ670E9PIiDIzHPVMZdJflVuUiiCzUWKuAgfg82DL/H3U58fEwTQEOl+5Q60pv'
-    sudo_ensure: present
-    sudo_content: "ryan     ALL = ( ALL ) ALL"
+  #  sudo_ensure: present
+  #  sudo_content: "ryan     ALL = ( ALL ) ALL"
+  #  sudo_priority: 10
   scott:
     tag: admin
     ensure: present

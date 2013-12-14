@@ -1,2 +1,0 @@
-class networking::hosting {
-
