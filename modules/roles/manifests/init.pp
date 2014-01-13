@@ -2,12 +2,22 @@ class roles {
   include profiles::base
 }
 
+class roles::master inherits roles {
+  include profiles::master
+  include profiles::linux
+}
+ 
+class roles::master::test inherits roles::master {
+}
+
 class roles::virtualmin inherits roles {
-    include profiles::virtualmin
+  include profiles::virtualmin
 }
 
 class roles::lamp inherits roles {
-    include profiles::virtualmin
+  include profiles::virtualmin
+  include profiles::linux
+  include profiles::lamp
 }
 
 class roles::lamp::test inherits roles::lamp {

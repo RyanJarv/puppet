@@ -20,7 +20,7 @@ class my_monitoring::linux {
     enable => true,
   }->
   firewall { '410 allow servercheck from monitoring server':
-    port   => 5555,
+    dport   => 5555,
     proto  => tcp,
     source => "$monitoringIP",
     action => accept,

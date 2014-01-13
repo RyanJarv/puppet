@@ -19,7 +19,7 @@
 
 # Define filebucket 'main':
 filebucket { 'main':
-  server => 'master.forest.net',
+  server => 'puppet.forest.net',
   path   => false,
 }
 
@@ -42,7 +42,11 @@ node default {
   #   class { 'my_class': }
 }
 
-node 'ubuntu' {
+node 'puppet.forest.net' {
+  include roles::master::test
+}
+
+node 'lamp01.forest.net' {
   include roles::lamp::test
 }
 

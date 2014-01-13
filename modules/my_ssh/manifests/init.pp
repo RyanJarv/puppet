@@ -1,9 +1,9 @@
 class my_ssh ( $sshIPs )
 {
-  firewall {'800 allow local ssh access':
+  firewall {'400 allow local ssh access':
     ensure => present,
-    port   => 22,
-    source => $sshIPs,
+    dport   => 22,
+    source => $sshIPs, #In hiera
     proto  => tcp,
     action => accept,
     chain  => INPUT,

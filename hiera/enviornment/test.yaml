@@ -1,6 +1,38 @@
 ---
 ## Apache
-apache::default_mods: ['fastcgi', 'actions', 'status', 'mime', 'dir']
+#apache::default_mods: ['fastcgi', 'actions', 'status', 'mime', 'dir']
+
+## DHCP server settings
+dhcp::dnsdomain: ['baknet.forest.net', '2.20.172.in-addr.arpa']
+dhcp::nameservers: ['8.8.8.8', '8.8.4.4']
+dhcp::ntpservers: ['us.pool.ntp.org']
+dhcp::interfaces: ['eth1']
+
+#dhcp_pool:
+#  backnet: 
+#    network: '172.20.2.0'
+#    mask: '255.255.254.0'
+#    range: ['172.20.2.200', '172.20.2.250']
+#    #gateway: '172.20.2.1'
+
+my_virtualmin::virtualmin_script: '/vagrant/virtualmin-install.sh'
+
+#mount_devices:
+#  virtualmin_backups:
+#    name: '/virtualmin_backups'
+#    ensure: 'mounted'
+#    atboot: true
+#    device: '/vagrant/virtualmin_backups'
+#
+
+#dhcp_host: 
+#  lamp01:
+#    mac: "00:00:00:00:00:00"
+#    ip: "172.20.2.201"
+#  lamp02:
+#    mac: "00:00:00:00:00:01"
+#    ip: "172.20.2.202"
+
 
 ## Monitoring IP -- Need to start use this 
 ## through out configs
@@ -15,20 +47,20 @@ snmp::contact: 'ryang@dfcolo.com'
 snmp::location: 'Tukwilla DC4'
 
 # VSFTPD
-vsftpd::anonymous_enable: 'NO'
-vsftpd::write_enable: 'YES'
-vsftpd::chroot_local_user: 'YES'
-vsftpd::userlist_enable: 'YES'
-vsftpd::directives: 
-  ssl_enable: 'YES'
-  rsa_cert_file: '/usr/local/ssl/vsftpd.pem'
-  rsa_private_key_file: '/usr/local/ssl/vsftpd.key'
+#vsftpd::anonymous_enable: 'NO'
+#vsftpd::write_enable: 'YES'
+#vsftpd::chroot_local_user: 'YES'
+#vsftpd::userlist_enable: 'YES'
+#vsftpd::directives: 
+#  ssl_enable: 'YES'
+#  rsa_cert_file: '/usr/local/ssl/vsftpd.pem'
+#  rsa_private_key_file: '/usr/local/ssl/vsftpd.key'
 
   
 
 
 ## SSH
-my_ssh::sshIPs: "192.168.0.0/16"
+my_ssh::sshIPs: "10.0.0.0/8"
 
 ## Hosts File
 hosts:
@@ -53,12 +85,12 @@ hosts:
 resolver::dns_servers:
   - '192.168.100.112'
 
-## DNS Records
-dns::zone::soa: "ns1.puppet.local"
-dns::zone::soa_email: "admin.puppet.local"
-dns::zone::nameservers:
-  - "ns1.puppet.local"
-  - "ns2.puppet.local"
+### DNS Records
+#dns::zone::soa: "ns1.puppet.local"
+#dns::zone::soa_email: "admin.puppet.local"
+#dns::zone::nameservers:
+#  - "ns1.puppet.local"
+#  - "ns2.puppet.local"
 
 ## Users
 # The password hash is for the
@@ -66,6 +98,9 @@ dns::zone::nameservers:
 # this in production
 # 
 # tag as admin to disable ftp for the account
+#
+# Make sure you have diferent names for each ssh key or you will
+# get a error about multiple declared resources
 users_sysadmins:
   ryan:
     tag:  admin
@@ -74,15 +109,16 @@ users_sysadmins:
     groups: [sudo, staff]
     comment: Ryan Gerstenkorn
     managehome: true
+    home: /usr/local/home/ryan
     shell: /bin/bash
     password: '$6$m.QennYY$u1wmV1B8kFXOmKgZ9eaoZhkK9eRzIG7dZ1.bwaNZ/LfLiq9BcPrd8CzKoxm0jsbsp0Kf2mz6QmUeiRP0Pvun00' 
     ssh_authorized_keys:
-      mykey:
+      ryans_ssh_key:
         type: 'ssh-rsa'
         key: 'AAAAB3NzaC1yc2EAAAADAQABAAABAQCupC1VnIjvP3nXBGBfW5r3WVC3jlmIiaLmEuAwiAmIqQLsjm6WZoldXx6rxbs7wimgDXILjyEDr8eacEOk09AyelKC93XptgaZl8juzNlvryQQrFtDiu/W2tAmS8/7fsk03I8aqP2McSt2Wkq6KoMoFU4QOIH7ewx5hWpyWIViWd2Z7yf/P6Dz4tHGg8JDsvoc4Kaqj0BM83AHSNQDSsW5izMfUJ0YEMEa9NgJi5VPV6/lypXv3hvw8AZAteoAhgFmaSDJUapMHRKWU54jO6SHVejQ670E9PIiDIzHPVMZdJflVuUiiCzUWKuAgfg82DL/H3U58fEwTQEOl+5Q60pv'
-  #  sudo_ensure: present
-  #  sudo_content: "ryan     ALL = ( ALL ) ALL"
-  #  sudo_priority: 10
+    sudo_ensure: present
+    sudo_content: "ryan     ALL = ( ALL ) ALL"
+    sudo_priority: 10
   scott:
     tag: admin
     ensure: present
@@ -90,6 +126,7 @@ users_sysadmins:
     groups: [sudo, staff]
     comment: Scott Gamble
     managehome: true
+    home: /usr/local/home/scott
     shell: /bin/bash
     password: '$6$m.QennYY$u1wmV1B8kFXOmKgZ9eaoZhkK9eRzIG7dZ1.bwaNZ/LfLiq9BcPrd8CzKoxm0jsbsp0Kf2mz6QmUeiRP0Pvun00' 
   monitor:
@@ -98,5 +135,22 @@ users_sysadmins:
 #    groups: [sudo, staff]
     comment: For solar winds monitoring
     managehome: true
+    home: /usr/local/home/monitor
     shell: /bin/bash
     password: '$6$m.QennYY$u1wmV1B8kFXOmKgZ9eaoZhkK9eRzIG7dZ1.bwaNZ/LfLiq9BcPrd8CzKoxm0jsbsp0Kf2mz6QmUeiRP0Pvun00' 
+  vagrant:
+    ensure: present
+    uid: 10004
+#    groups: [sudo, staff]
+    comment: vagrant user
+    managehome: true
+    home: /usr/local/home/vagrant
+    shell: /bin/bash
+    password: '$6$m.QennYY$u1wmV1B8kFXOmKgZ9eaoZhkK9eRzIG7dZ1.bwaNZ/LfLiq9BcPrd8CzKoxm0jsbsp0Kf2mz6QmUeiRP0Pvun00' 
+    ssh_authorized_keys:
+      vagrant_ssh_key:
+        type: 'ssh-rsa'
+        key: 'AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ'
+    sudo_ensure: present
+    sudo_content: "vagrant     ALL = ( ALL ) NOPASSWD: ALL"
+    sudo_priority: 10
